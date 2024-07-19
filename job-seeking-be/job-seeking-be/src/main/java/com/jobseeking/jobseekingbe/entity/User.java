@@ -9,7 +9,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public abstract class User {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

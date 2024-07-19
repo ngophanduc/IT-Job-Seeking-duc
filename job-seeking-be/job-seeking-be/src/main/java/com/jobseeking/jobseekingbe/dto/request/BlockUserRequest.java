@@ -2,6 +2,10 @@ package com.jobseeking.jobseekingbe.dto.request;
 public class BlockUserRequest {
     private String userId;
 
+    public BlockUserRequest(){
+
+    }
+
     public BlockUserRequest(String userId) {
         this.userId = userId;
     }
