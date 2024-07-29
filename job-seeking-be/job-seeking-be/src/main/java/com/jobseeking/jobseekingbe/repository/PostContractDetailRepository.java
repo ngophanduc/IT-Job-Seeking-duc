@@ -11,4 +11,5 @@ import java.util.Set;
 
 public interface PostContractDetailRepository extends JpaRepository<PostContractDetail, KeyPostContract> {
     Set<PostContractDetail> findAllByKeyPostContractPostId(int postId);
+    void deleteAllByKeyPostContractPostId(int postId);
 }

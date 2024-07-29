@@ -2,10 +2,8 @@ package com.jobseeking.jobseekingbe.entity;
 
 import com.jobseeking.jobseekingbe.entity.keys.KeyEmployerCandidate;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.Set;
 
@@ -14,14 +12,17 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@IdClass(KeyEmployerCandidate.class)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class EmployerFollow {
 
-    @Id
-    @Column(name = "candidate_id")
-    String candidateId;
+    @EmbeddedId
+    KeyEmployerCandidate keyEmployerCandidate;
 
-    @Id
-    @Column(name = "employer_id")
-    String employerId;
+    @ManyToOne
+    @JoinColumn(name = "candidate_id", insertable=false, updatable=false)
+    Candidate candidate;
+
+    @ManyToOne
+    @JoinColumn(name = "employer_id", insertable=false, updatable=false)
+    Employer employer;
 }

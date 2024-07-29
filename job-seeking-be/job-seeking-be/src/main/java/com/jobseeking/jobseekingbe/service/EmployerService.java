@@ -1,14 +1,17 @@
 package com.jobseeking.jobseekingbe.service;
 
+import com.jobseeking.jobseekingbe.dto.request.CompanySearchRequest;
 import com.jobseeking.jobseekingbe.dto.request.EmployerUpdateRequest;
 import com.jobseeking.jobseekingbe.dto.request.PostCreationRequest;
 import com.jobseeking.jobseekingbe.dto.response.CandidateDTO;
+import com.jobseeking.jobseekingbe.dto.response.CompanyDTO;
 import com.jobseeking.jobseekingbe.dto.response.EmployerDTO;
 import com.jobseeking.jobseekingbe.dto.response.ProvinceDTO;
 import com.jobseeking.jobseekingbe.entity.Candidate;
 import com.jobseeking.jobseekingbe.entity.Employer;
 import com.jobseeking.jobseekingbe.entity.Province;
 import com.jobseeking.jobseekingbe.repository.EmployerRepository;
+import com.jobseeking.jobseekingbe.repository.PostRepository;
 import com.jobseeking.jobseekingbe.repository.ProvinceRepository;
 import com.jobseeking.jobseekingbe.repository.UserRepository;
 import com.jobseeking.jobseekingbe.service.imp.EmployerServiceImp;
@@ -18,6 +21,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
@@ -25,6 +31,7 @@ public class EmployerService implements EmployerServiceImp {
 
     EmployerRepository employerRepository;
     ProvinceRepository provinceRepository;
+    PostRepository postRepository;
 
     @Override
     public Employer getEmployerById(String id) {
@@ -94,6 +101,75 @@ public class EmployerService implements EmployerServiceImp {
         }
         employerRepository.save(employer);
         return true;
+    }
+
+    @Override
+    public List<CompanyDTO> filterCompany(CompanySearchRequest companySearchRequest) {
+
+        String input = companySearchRequest.getSearchInput();
+        int locationId = companySearchRequest.getSelectedOption();
+        if(input.isEmpty()) {
+            return filterCompanyByLocation(locationId);
+        }
+        if(!input.isEmpty() && locationId == 0) {
+            return filterCompanyByName(input);
+        }
+        return filterCompanyByNameAndLocation(input, locationId);
+    }
+
+    public List<CompanyDTO> filterCompanyByName(String companyName) {
+        List<Employer> employers = employerRepository.findAll();
+        List<CompanyDTO> companyDTOS = new ArrayList<>();
+        for ( Employer employer : employers ) {
+            if(employer.getCompanyName().toUpperCase().contains(companyName.toUpperCase())) {
+                CompanyDTO companyDTO = CompanyDTO.builder()
+                        .companyId(employer.getId())
+                        .locationName(employer.getProvince() != null ? employer.getProvince().getProvinceName() : "")
+                        .companyName(employer.getCompanyName())
+                        .image(java.util.Base64.getDecoder().decode(employer.getAvatar().getData()))
+                        .postCount(postRepository.getAllByEmployerId(employer.getId()).size())
+                        .build();
+                companyDTOS.add(companyDTO);
+            }
+        }
+        return companyDTOS;
+    }
+
+    public List<CompanyDTO> filterCompanyByLocation(int locationId) {
+        List<Employer> employers = employerRepository.findAll();
+        List<CompanyDTO> companyDTOS = new ArrayList<>();
+        for ( Employer employer : employers ) {
+            if(employer.getProvince() != null && employer.getProvince().getProvinceId() == locationId) {
+                CompanyDTO companyDTO = CompanyDTO.builder()
+                        .companyId(employer.getId())
+                        .locationName(employer.getProvince() != null ? employer.getProvince().getProvinceName() : "")
+                        .companyName(employer.getCompanyName())
+                        .image(java.util.Base64.getDecoder().decode(employer.getAvatar().getData()))
+                        .postCount(postRepository.getAllByEmployerId(employer.getId()).size())
+                        .build();
+                companyDTOS.add(companyDTO);
+            }
+        }
+        return companyDTOS;
+    }
+
+    public List<CompanyDTO> filterCompanyByNameAndLocation(String input, int locationId) {
+        List<Employer> employers = employerRepository.findAll();
+        List<CompanyDTO> companyDTOS = new ArrayList<>();
+        for ( Employer employer : employers ) {
+            if(employer.getCompanyName().toUpperCase().contains(input.toUpperCase())
+                && employer.getProvince() != null && employer.getProvince().getProvinceId() == locationId) {
+                CompanyDTO companyDTO = CompanyDTO.builder()
+                        .companyId(employer.getId())
+                        .locationName(employer.getProvince() != null ? employer.getProvince().getProvinceName() : "")
+                        .companyName(employer.getCompanyName())
+                        .image(java.util.Base64.getDecoder().decode(employer.getAvatar().getData()))
+                        .postCount(postRepository.getAllByEmployerId(employer.getId()).size())
+                        .build();
+                companyDTOS.add(companyDTO);
+            }
+        }
+        return companyDTOS;
     }
 
 }

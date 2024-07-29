@@ -2,6 +2,8 @@ package com.jobseeking.jobseekingbe.service.imp;
 
 import com.jobseeking.jobseekingbe.dto.ApiResponse;
 import com.jobseeking.jobseekingbe.dto.request.PostCreationRequest;
+import com.jobseeking.jobseekingbe.dto.request.PostFilterRequest;
+import com.jobseeking.jobseekingbe.dto.request.PostUpdateRequest;
 import com.jobseeking.jobseekingbe.dto.response.*;
 import com.jobseeking.jobseekingbe.entity.Employer;
 import com.jobseeking.jobseekingbe.entity.Post;
@@ -11,9 +13,15 @@ import java.util.List;
 public interface PostServiceImp {
 
     int savePost(Post post);
-    List<PostDTO> getAllPost();
+
+    boolean updatePost(int id, PostUpdateRequest postUpdateRequest);
+    List<PostDTO> getAllActivePost();
     PostDTO getPostById(int id);
     List<PostDTO> getAllPendingPosts();
+
+    List<PostDTO> getAllPost();
+
+    List<PostDTO> getPostByStatus(int id);
 
     boolean activePost(int postId);
     boolean rejectPost(int postId);
@@ -24,8 +32,6 @@ public interface PostServiceImp {
     boolean addPostWhenAuthenticated(String id, PostCreationRequest postCreationRequest);
 
     void insertPost(Employer employer, PostCreationRequest postCreationRequest);
-
-    boolean updatePost(int postId, PostCreationRequest postCreationRequest);
 
     boolean updatePostLevelDetail(int postId, String [] listLevelId);
     boolean updatePostTypeDetail(int postId, String [] listTypeId);
@@ -40,4 +46,5 @@ public interface PostServiceImp {
     PostRequirementDTO getPostRequirement(int postId);
 
     PostDTO postMapper(Post post);
+    List<PostDTO> filterPost(PostFilterRequest postFilterRequest);
 }

@@ -9,7 +9,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public abstract class User {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,6 +24,9 @@ public abstract class User {
 
     @Column(name = "phone")
     String phone;
+
+    @Column(name = "blocked")
+    boolean blocked = false;
 
     public User(String email, String password, String phone, Role role) {
         this.email = email;

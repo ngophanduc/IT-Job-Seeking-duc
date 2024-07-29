@@ -58,4 +58,7 @@ public class Post {
     @OneToMany(mappedBy = "post")
     Set<PostContractDetail> postContractDetails;
 
+    @OneToMany(mappedBy = "post")
+    Set<PostSave> postSaves;
+
 }

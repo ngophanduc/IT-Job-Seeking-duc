@@ -1,13 +1,13 @@
 package com.jobseeking.jobseekingbe.service.imp;
 
-import com.jobseeking.jobseekingbe.dto.request.AvatarUpdateRequest;
+import com.jobseeking.jobseekingbe.dto.request.FileUploadRequest;
 import com.jobseeking.jobseekingbe.entity.Avatar;
 
 public interface FileStorageServiceImp {
 
-    void save(AvatarUpdateRequest avatarUpdateRequest);
+    void save(FileUploadRequest fileUploadRequest);
 
-    void updateBackground(AvatarUpdateRequest avatarUpdateRequest);
+    void updateBackground(FileUploadRequest fileUploadRequest);
 
     String getBackground(String userId);
 

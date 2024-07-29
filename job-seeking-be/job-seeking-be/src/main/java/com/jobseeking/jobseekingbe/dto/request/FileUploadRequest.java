@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class AvatarUpdateRequest {
+public class FileUploadRequest {
     String userId;
-    MultipartFile avatar;
+    MultipartFile file;
 }

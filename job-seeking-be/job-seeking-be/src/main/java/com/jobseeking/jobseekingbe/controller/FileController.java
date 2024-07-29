@@ -1,12 +1,9 @@
 package com.jobseeking.jobseekingbe.controller;
 
 import com.jobseeking.jobseekingbe.dto.ApiResponse;
-import com.jobseeking.jobseekingbe.dto.request.AvatarUpdateRequest;
+import com.jobseeking.jobseekingbe.dto.request.FileUploadRequest;
 import com.jobseeking.jobseekingbe.entity.Avatar;
-import com.jobseeking.jobseekingbe.entity.Post;
-import com.jobseeking.jobseekingbe.repository.PostRepository;
 import com.jobseeking.jobseekingbe.service.imp.FileStorageServiceImp;
-import com.jobseeking.jobseekingbe.service.imp.PostServiceImp;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,8 +20,8 @@ public class FileController {
     FileStorageServiceImp fileStorageServiceImp;
 
     @PostMapping("/avatar")
-    public ApiResponse<String> uploadAvatar(@ModelAttribute AvatarUpdateRequest avatarUpdateRequest) {
-        fileStorageServiceImp.save(avatarUpdateRequest);
+    public ApiResponse<String> uploadAvatar(@ModelAttribute FileUploadRequest fileUploadRequest) {
+        fileStorageServiceImp.save(fileUploadRequest);
         String message = "Upload file successful!";
         return ApiResponse.<String>builder()
                 .result(message)
@@ -32,8 +29,8 @@ public class FileController {
     }
 
     @PostMapping("/background")
-    public ApiResponse<String> uploadBackground(@ModelAttribute AvatarUpdateRequest avatarUpdateRequest) {
-        fileStorageServiceImp.updateBackground(avatarUpdateRequest);
+    public ApiResponse<String> uploadBackground(@ModelAttribute FileUploadRequest fileUploadRequest) {
+        fileStorageServiceImp.updateBackground(fileUploadRequest);
         String message = "Upload file successful!";
         return ApiResponse.<String>builder()
                 .result(message)

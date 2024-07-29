@@ -53,6 +53,9 @@ public class Employer extends User {
     @OneToMany(mappedBy = "employer")
     Set<Post> posts;
 
+    @OneToMany(mappedBy = "employer")
+    Set<EmployerFollow> employerFollows;
+
     @ManyToOne
     @JoinColumn(name = "pro_id")
     Province province;

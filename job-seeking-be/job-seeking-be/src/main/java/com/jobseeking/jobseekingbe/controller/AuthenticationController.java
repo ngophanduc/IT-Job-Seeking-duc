@@ -6,21 +6,15 @@ import com.jobseeking.jobseekingbe.dto.request.ChangePasswordRequest;
 import com.jobseeking.jobseekingbe.dto.request.IntrospectRequest;
 import com.jobseeking.jobseekingbe.dto.request.ResetPasswordRequest;
 import com.jobseeking.jobseekingbe.dto.response.AuthenticationResponse;
-import com.jobseeking.jobseekingbe.dto.response.ChangePasswordResponse;
 import com.jobseeking.jobseekingbe.dto.response.IntrospectResponse;
-import com.jobseeking.jobseekingbe.entity.User;
 import com.jobseeking.jobseekingbe.service.imp.AuthenticationServiceImp;
-import com.jobseeking.jobseekingbe.service.imp.UserServiceImp;
 import com.nimbusds.jose.JOSEException;
-import jakarta.servlet.ServletContext;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.var;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
-import java.util.UUID;
 
 @CrossOrigin
 @RestController

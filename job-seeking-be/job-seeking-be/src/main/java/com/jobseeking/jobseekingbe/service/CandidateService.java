@@ -1,22 +1,30 @@
 package com.jobseeking.jobseekingbe.service;
 
-import com.jobseeking.jobseekingbe.dto.request.AvatarUpdateRequest;
 import com.jobseeking.jobseekingbe.dto.request.CandidateUpdateRequest;
+import com.jobseeking.jobseekingbe.dto.request.FileUploadRequest;
+import com.jobseeking.jobseekingbe.dto.response.CVDTO;
 import com.jobseeking.jobseekingbe.dto.response.CandidateDTO;
-import com.jobseeking.jobseekingbe.entity.Candidate;
-import com.jobseeking.jobseekingbe.entity.Province;
-import com.jobseeking.jobseekingbe.repository.CandidateRepository;
-import com.jobseeking.jobseekingbe.repository.ProvinceRepository;
-import com.jobseeking.jobseekingbe.repository.UserRepository;
+import com.jobseeking.jobseekingbe.dto.response.CompanyDTO;
+import com.jobseeking.jobseekingbe.dto.response.PostSaveDTO;
+import com.jobseeking.jobseekingbe.entity.*;
+import com.jobseeking.jobseekingbe.entity.keys.KeyCandidateCV;
+import com.jobseeking.jobseekingbe.entity.keys.KeyEmployerCandidate;
+import com.jobseeking.jobseekingbe.entity.keys.KeyPostCandidate;
+import com.jobseeking.jobseekingbe.repository.*;
 import com.jobseeking.jobseekingbe.service.imp.CandidateServiceImp;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -24,7 +32,13 @@ import java.util.Date;
 public class CandidateService implements CandidateServiceImp {
 
     CandidateRepository candidateRepository;
+    EmployerRepository employerRepository;
     ProvinceRepository provinceRepository;
+    PostRepository postRepository;
+    PostSaveRepository postSaveRepository;
+    EmployerFollowRepository employerFollowRepository;
+    CVRepository cvRepository;
+    CandidateCVRepository candidateCVRepository;
 
     @Override
     public Candidate getCandidateById(String id) {
@@ -104,6 +118,150 @@ public class CandidateService implements CandidateServiceImp {
         return true;
     }
 
+    @Override
+    public boolean savePost(String userId, int postId) {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post is not found"));
+        Candidate candidate = candidateRepository.findCandidateById(userId);
+        KeyPostCandidate keyPostCandidate = KeyPostCandidate.builder()
+                .postId(postId)
+                .userId(userId)
+                .build();
+        PostSave postSave = PostSave.builder()
+                .keyPostCandidate(keyPostCandidate)
+                .post(post)
+                .candidate(candidate)
+                .build();
+        postSaveRepository.save(postSave);
+        return true;
+    }
+
+    @Transactional
+    @Override
+    public boolean deletePostSave(String userId, int postId) {
+        KeyPostCandidate keyPostCandidate = KeyPostCandidate.builder()
+                .userId(userId)
+                .postId(postId)
+                .build();
+        postSaveRepository.deleteByKeyPostCandidate(keyPostCandidate);
+        return true;
+    }
+
+    @Override
+    public List<PostSaveDTO> getAllPostSave(String userId) {
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        List<PostSave> postSaves = postSaveRepository.findAllByKeyPostCandidateUserId(userId);
+        List<PostSaveDTO> postSaveDTOS = new ArrayList<>();
+
+        for ( PostSave postSave : postSaves ) {
+            Post p = postSave.getPost();
+            PostSaveDTO postSaveDTO = PostSaveDTO.builder()
+                    .postId(p.getPostId())
+                    .title(p.getJobTitle())
+                    .companyName(p.getEmployer().getCompanyName())
+                    .applicationDate(simpleDateFormat.format(p.getEndDate()))
+                    .image(java.util.Base64.getDecoder().decode(p.getEmployer().getAvatar().getData()))
+                    .build();
+            postSaveDTOS.add(postSaveDTO);
+        }
+
+        return postSaveDTOS;
+    }
+
+    @Override
+    public boolean followCompany(String userId, String companyId) {
+
+        Employer employer = employerRepository.findEmployerById(companyId);
+        Candidate candidate = candidateRepository.findCandidateById(userId);
+
+        KeyEmployerCandidate keyEmployerCandidate = KeyEmployerCandidate.builder()
+                .candidateId(userId)
+                .employerId(companyId)
+                .build();
+        EmployerFollow employerFollow = EmployerFollow.builder()
+                .keyEmployerCandidate(keyEmployerCandidate)
+                .employer(employer)
+                .candidate(candidate)
+                .build();
+        employerFollowRepository.save(employerFollow);
+        return true;
+    }
+
+    @Transactional
+    @Override
+    public boolean unFollowCompany(String userId, String companyId) {
+
+        KeyEmployerCandidate keyEmployerCandidate = KeyEmployerCandidate.builder()
+                .candidateId(userId)
+                .employerId(companyId)
+                .build();
+        employerFollowRepository.deleteByKeyEmployerCandidate(keyEmployerCandidate);
+        return true;
+    }
+
+    @Override
+    public List<CompanyDTO> getFollowCompanies(String userId) {
+
+        List<EmployerFollow> employerFollows = employerFollowRepository.findAll();
+        List<CompanyDTO> companyDTOS = new ArrayList<>();
+        for ( EmployerFollow employerFollow : employerFollows ) {
+
+            Employer employer = employerFollow.getEmployer();
+            CompanyDTO companyDTO = CompanyDTO.builder()
+                    .companyId(employer.getId())
+                    .companyName(employer.getCompanyName())
+                    .locationName(employer.getProvince() != null ? employer.getProvince().getProvinceName() : "")
+                    .postCount(postRepository.getAllByEmployerId(employer.getId()).size())
+                    .image(java.util.Base64.getDecoder().decode(employer.getAvatar().getData()))
+                    .build();
+            companyDTOS.add(companyDTO);
+        }
+        return companyDTOS;
+    }
+
+    @Override
+    public boolean uploadCV(FileUploadRequest fileUploadRequest) throws IOException {
+
+        Candidate candidate = candidateRepository.findCandidateById(fileUploadRequest.getUserId());
+        CV cv = CV.builder()
+                .cvName(fileUploadRequest.getFile().getOriginalFilename())
+                .data(Base64.getEncoder().encodeToString(fileUploadRequest.getFile().getBytes()))
+                .build();
+        int cvId = saveCV(cv);
+        KeyCandidateCV keyCandidateCV = KeyCandidateCV.builder()
+                .cv_id(cvId)
+                .candidateId(candidate.getId())
+                .build();
+
+        CandidateCV candidateCV = CandidateCV.builder()
+                .keyCandidateCV(keyCandidateCV)
+                .cv(cv)
+                .candidate(candidate)
+                .build();
+        candidateCVRepository.save(candidateCV);
+        return true;
+    }
+
+    @Override
+    public List<CVDTO> getCVs(String userId) {
+        List<CandidateCV> candidateCVS = candidateCVRepository.findAllByKeyCandidateCVCandidateId(userId);
+        List<CVDTO> cvdtos = new ArrayList<>();
+        for ( CandidateCV candidateCV : candidateCVS ) {
+            CVDTO cvdto = CVDTO.builder()
+                    .fileName(candidateCV.getCv().getCvName())
+                    .data(java.util.Base64.getDecoder().decode(candidateCV.getCv().getData()))
+                    .build();
+            cvdtos.add(cvdto);
+        }
+        return cvdtos;
+    }
+
+    public int saveCV(CV cv) {
+        cvRepository.save(cv);
+        return cv.getCvId();
+    }
 
     public Date parseDate(String date) throws ParseException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-mm-yyyy");

@@ -25,12 +25,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 
         httpSecurity.authorizeHttpRequests(request ->
-                request.requestMatchers("/").permitAll()
+                request.requestMatchers("/", "/company", "/company/{id}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/user").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/token", "/auth/introspect", "/auth/reset-password", "/auth/change-password").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/post/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/post").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/post/admin").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/post/active", "/post/{id}", "/post/type", "/post/level", "/post/contract", "/post/user/{id}").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/post", "/post/filter").permitAll()
                         .requestMatchers(HttpMethod.GET, "/file/**").permitAll()
+                        .requestMatchers("/candidate/**").permitAll()
+                        .requestMatchers("/employer/**").permitAll()
                         .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 ->

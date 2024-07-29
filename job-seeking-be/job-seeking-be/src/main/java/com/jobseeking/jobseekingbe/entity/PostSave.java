@@ -2,24 +2,25 @@ package com.jobseeking.jobseekingbe.entity;
 
 import com.jobseeking.jobseekingbe.entity.keys.KeyPostCandidate;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Entity(name = "post_save")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@IdClass(KeyPostCandidate.class)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class PostSave {
 
-    @Id
-    @Column(name = "user_id")
-    String userId;
+    @EmbeddedId
+    KeyPostCandidate keyPostCandidate;
 
-    @Id
-    @Column(name = "post_id")
-    int postId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", insertable=false, updatable=false)
+    Candidate candidate;
+
+    @ManyToOne
+    @JoinColumn(name = "post_id", insertable = false, updatable = false)
+    Post post;
 }

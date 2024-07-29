@@ -2,6 +2,8 @@ package com.jobseeking.jobseekingbe.service;
 
 import com.jobseeking.jobseekingbe.dto.ApiResponse;
 import com.jobseeking.jobseekingbe.dto.request.PostCreationRequest;
+import com.jobseeking.jobseekingbe.dto.request.PostFilterRequest;
+import com.jobseeking.jobseekingbe.dto.request.PostUpdateRequest;
 import com.jobseeking.jobseekingbe.dto.response.*;
 import com.jobseeking.jobseekingbe.entity.*;
 import com.jobseeking.jobseekingbe.entity.keys.KeyPostContract;
@@ -11,13 +13,17 @@ import com.jobseeking.jobseekingbe.repository.*;
 import com.jobseeking.jobseekingbe.service.imp.AuthenticationServiceImp;
 import com.jobseeking.jobseekingbe.service.imp.EmployerServiceImp;
 import com.jobseeking.jobseekingbe.service.imp.PostServiceImp;
+import jakarta.annotation.PostConstruct;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Array;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -45,14 +51,117 @@ public class PostService implements PostServiceImp {
     String POST_REQUIREMENT_PROGRESS = "PROGRESS";
     String POST_REQUIREMENT_MINIMUM = "MINIMUM";
 
+    @PostConstruct
+    public void updatePostExpiryDate() throws ParseException {
+        List<Post> posts = postRepository.findAll();
+        PostStatus postStatus = postStatusRepository.findByStatusTitle("EXPIRED");
+        Date date = new Date();
+        for ( Post p : posts ) {
+             if(p.getEndDate().before(date)) {
+                 p.setPostStatus(postStatus);
+                 postRepository.save(p);
+             }
+        }
+    }
+
     @Override
     public int savePost(Post post) {
         postRepository.save(post);
         return post.getPostId();
     }
 
+    @Transactional
+    @Override
+    public boolean updatePost(int id, PostUpdateRequest postUpdateRequest) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post is not found"));
+        if(!postUpdateRequest.getPosition().isEmpty()) {
+            post.setJobTitle(postUpdateRequest.getPosition());
+        }
+        if(!postUpdateRequest.getJobDetail().isEmpty()) {
+            post.setJobDesc(postUpdateRequest.getJobDetail());
+        }
+        if(!postUpdateRequest.getJobDetail().isEmpty()) {
+            post.setJobDesc(postUpdateRequest.getJobDetail());
+        }
+        if(postUpdateRequest.getMinSalary() != null) {
+            post.setMinSalary(postUpdateRequest.getMinSalary());
+        }
+        if(postUpdateRequest.getMaxSalary() != null) {
+            post.setMaxSalary(postUpdateRequest.getMaxSalary());
+        }
+        if(postUpdateRequest.getEndDate() != null) {
+            post.setEndDate(postUpdateRequest.getEndDate());
+        }
+        if(!postUpdateRequest.getTech().isEmpty()) {
+            post.setTechnologies(postUpdateRequest.getTech());
+        }
+        if(postUpdateRequest.getLevel().length >= 1) {
+            postLevelDetailRepository.deleteAllByKeyPostLevelPostId(id);
+            updatePostLevelDetail(id, postUpdateRequest.getLevel());
+        }
+        if(postUpdateRequest.getJobType().length >= 1) {
+            postTypeDetailRepository.deleteAllByKeyPostTypePostId(id);
+            updatePostTypeDetail(id, postUpdateRequest.getJobType());
+        }
+        if(postUpdateRequest.getJobContract().length >= 1) {
+            postContractDetailRepository.deleteAllByKeyPostContractPostId(id);
+            updatePostContractDetail(id, postUpdateRequest.getJobContract());
+        }
+        if(postUpdateRequest.getBenefit().length >= 1) {
+            updatePostRequirement(id, POST_REQUIREMENT_BENEFIT, postUpdateRequest.getBenefit());
+        }
+        if(postUpdateRequest.getProgress().length >= 1) {
+            updatePostRequirement(id, POST_REQUIREMENT_PROGRESS, postUpdateRequest.getProgress());
+        }
+        if(postUpdateRequest.getRole().length >= 1) {
+            updatePostRequirement(id, POST_REQUIREMENT_ROLE, postUpdateRequest.getRole());
+        }
+        if(postUpdateRequest.getSkill().length >= 1) {
+            updatePostRequirement(id, POST_REQUIREMENT_SKILL, postUpdateRequest.getSkill());
+        }
+        if(postUpdateRequest.getMinimumYear().length >= 1) {
+            updatePostRequirement(id, POST_REQUIREMENT_MINIMUM, postUpdateRequest.getMinimumYear());
+        }
+        return true;
+    }
+
     @Override
     public List<PostDTO> getAllPost() {
+        List<PostDTO> posts = new ArrayList<>();
+        for ( Post post : postRepository.findAll() ) {
+            PostDTO postDTO = getPostById(post.getPostId());
+            posts.add(postDTO);
+        }
+        return posts;
+    }
+
+    @Override
+    public List<PostDTO> getPostByStatus(int id) {
+        if (id != 0) {
+            PostStatus postStatus = postStatusRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Post Status is not found"));
+
+            List<Post> posts = postRepository.findAllByPostStatusStatusTitle(postStatus.getStatusTitle());
+            List<PostDTO> postDTOS = new ArrayList<>();
+            for ( Post p : posts ) {
+                PostDTO postDTO = postMapper(p);
+                postDTOS.add(postDTO);
+            }
+            return postDTOS;
+        } else {
+            List<Post> posts = postRepository.findAll() ;
+            List<PostDTO> postDTOS = new ArrayList<>();
+            for ( Post p : posts ) {
+                PostDTO postDTO = postMapper(p);
+                postDTOS.add(postDTO);
+            }
+            return postDTOS;
+        }
+    }
+
+    @Override
+    public List<PostDTO> getAllActivePost() {
         List<PostDTO> posts = new ArrayList<>();
         for ( Post post : postRepository.findAll() ) {
             if (post.getPostStatus().getStatusTitle().equalsIgnoreCase("ACTIVE")) {
@@ -108,7 +217,7 @@ public class PostService implements PostServiceImp {
         List<Post> posts = postRepository.getAllByEmployerId(id);
         List<PostDTO> postDTOS = new ArrayList<>();
         for( Post p : posts ) {
-            PostDTO postDTO = getPostById(p.getPostId());
+            PostDTO postDTO = postMapper(p);
             postDTOS.add(postDTO);
         }
         return postDTOS;
@@ -192,11 +301,6 @@ public class PostService implements PostServiceImp {
         updatePostRequirement(postId, POST_REQUIREMENT_BENEFIT, postCreationRequest.getBenefit());
         updatePostRequirement(postId, POST_REQUIREMENT_PROGRESS, postCreationRequest.getProgress());
         updatePostRequirement(postId, POST_REQUIREMENT_MINIMUM, postCreationRequest.getMinimumYear());
-    }
-
-    @Override
-    public boolean updatePost(int postId, PostCreationRequest postCreationRequest) {
-        return false;
     }
 
     @Override
@@ -453,5 +557,148 @@ public class PostService implements PostServiceImp {
                 .tech(post.getTechnologies())
                 .postRequirementDTO(postRequirementDTO)
                 .build();
+    }
+
+    @Override
+    public List<PostDTO> filterPost(PostFilterRequest postFilterRequest) {
+        List<PostDTO> postDTOS = new ArrayList<>();
+        String input = postFilterRequest.getInput();
+        int locationId = postFilterRequest.getLocation();
+        int contractId = postFilterRequest.getContract();
+        int[] levelIds = postFilterRequest.getLevel();
+        int[] typeIds = postFilterRequest.getType();
+
+        List<Post> posts = filterPostByLevel(
+                                filterPostByType(
+                                        filterPostByContractId(
+                                                filterPostByLocationId(
+                                                        filterPostByInput(input),
+                                                        locationId),
+                                                contractId),
+                                        typeIds),
+                                levelIds) ;
+        for ( Post p : posts ) {
+            postDTOS.add(postMapper(p));
+        }
+        return postDTOS;
+    }
+
+    public List<Post> getActivePostForFilter() {
+        List<Post> posts = new ArrayList<>();
+        for ( Post post : postRepository.findAll() ) {
+            if (post.getPostStatus().getStatusTitle().equalsIgnoreCase("ACTIVE")) {
+                posts.add(post);
+            }
+        }
+        return posts;
+    }
+
+    public List<Post> filterPostByLocationId(List<Post> posts, int id){
+        List<Post> returnData = new ArrayList<>();
+        if(id != 0) {
+            for ( Post p : posts ) {
+                if(p.getEmployer().getProvince() != null
+                        && p.getEmployer().getProvince().getProvinceId() == id) {
+                    returnData.add(p);
+                }
+            }
+        } else {
+            returnData = posts;
+        }
+        return returnData;
+    }
+
+    public List<Post> filterPostByContractId(List<Post> posts, int id){
+        List<PostContractDetail> postContractDetails = postContractDetailRepository.findAll();
+        List<Post> returnData = new ArrayList<>();
+        if(id != 0) {
+            for ( PostContractDetail p : postContractDetails ) {
+                if( p.getPost().getPostStatus().getStatusTitle().equalsIgnoreCase("ACTIVE")
+                    && p.getPostContract().getContractId() == id
+                    && posts.contains(p.getPost())) {
+                        returnData.add(p.getPost());
+                }
+            }
+        } else {
+            returnData = posts;
+        }
+        return returnData;
+    }
+
+    public List<Post> filterPostByInput(String input){
+        List<Post> posts = getActivePostForFilter();
+        List<Post> returnData = new ArrayList<>();
+        if(!input.isEmpty()) {
+            for ( Post p : posts ) {
+                if( p.getJobTitle().toUpperCase().contains(input.toUpperCase())
+                        || p.getEmployer().getCompanyName().toUpperCase().contains(input.toUpperCase())
+                        || p.getTechnologies().toUpperCase().contains(input.toUpperCase()) ) {
+                    returnData.add(p);
+                }
+            }
+        } else {
+            returnData = posts;
+        }
+        return returnData;
+    }
+
+    public List<Post> filterPostByLevel(List<Post> posts, int[] ids) {
+        List<Post> returnData = new ArrayList<>();
+        if(ids.length != 0 && !Arrays.stream(ids).anyMatch(x -> x == 1) ) {
+            List<PostLevelDetail> postLevelDetails = postLevelDetailRepository.findAll();
+            List<Post> postFiltered = new ArrayList<>();
+            int currentPostId = 0;
+            for( PostLevelDetail postLevelDetail : postLevelDetails ) {
+                int levelId = postLevelDetail.getPostLevel().getLevelId();
+                if ( levelId == 1 ) {
+                    postFiltered.add(postLevelDetail.getPost());
+                    continue;
+                }
+                if( Arrays.stream(ids).anyMatch(x -> x == levelId)
+                    && postLevelDetail.getPost().getPostId() != currentPostId ) {
+                    currentPostId = postLevelDetail.getPost().getPostId();
+                    postFiltered.add(postLevelDetail.getPost());
+                }
+            }
+            returnData = findDuplicate(posts, postFiltered);
+        } else {
+            returnData = posts;
+        }
+        return returnData;
+    }
+
+    public List<Post> filterPostByType(List<Post> posts, int[] ids){
+        List<Post> returnData = new ArrayList<>();
+        if(ids.length != 0) {
+            List<PostTypeDetail> postTypeDetails = postTypeDetailRepository.findAll();
+            List<Post> postFiltered = new ArrayList<>();
+            int currentPostId = 0;
+            for( PostTypeDetail postTypeDetail : postTypeDetails ) {
+                int typeId = postTypeDetail.getPostType().getTypeId();
+                if( Arrays.stream(ids).anyMatch(x -> x == typeId)
+                        && postTypeDetail.getPost().getPostId() != currentPostId ) {
+                    postFiltered.add(postTypeDetail.getPost());
+                    currentPostId = postTypeDetail.getPost().getPostId();
+                }
+            }
+            returnData = findDuplicate(posts, postFiltered);
+        } else {
+            returnData = posts;
+        }
+        return returnData;
+    }
+
+    public List<Post> findDuplicate(List<Post> currentList, List<Post> conditionalList) {
+        List<Post> returnData = new ArrayList<>();
+        HashSet<Integer> postHashSet = new HashSet<>();
+        for ( Post p : currentList ) {
+            postHashSet.add(p.getPostId());
+        }
+        for ( Post p : conditionalList ) {
+            if(postHashSet.contains(p.getPostId())) {
+                returnData.add(p);
+            }
+        }
+        return returnData;
     }
 }

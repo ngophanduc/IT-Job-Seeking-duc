@@ -12,4 +12,5 @@ import java.util.Set;
 
 public interface PostLevelDetailRepository extends JpaRepository<PostLevelDetail, KeyPostLevel> {
     Set<PostLevelDetail> findAllByKeyPostLevelPostId(int postId);
+    void deleteAllByKeyPostLevelPostId(int postId);
 }

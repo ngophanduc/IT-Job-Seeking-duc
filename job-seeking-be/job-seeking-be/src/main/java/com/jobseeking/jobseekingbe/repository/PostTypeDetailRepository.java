@@ -10,4 +10,5 @@ import java.util.Set;
 @Repository
 public interface PostTypeDetailRepository extends JpaRepository<PostTypeDetail, KeyPostType> {
     Set<PostTypeDetail> findAllByKeyPostTypePostId(int postId);
+    void deleteAllByKeyPostTypePostId(int postId);
 }

@@ -1,6 +1,6 @@
 package com.jobseeking.jobseekingbe.service;
 
-import com.jobseeking.jobseekingbe.dto.request.AvatarUpdateRequest;
+import com.jobseeking.jobseekingbe.dto.request.FileUploadRequest;
 import com.jobseeking.jobseekingbe.entity.Avatar;
 import com.jobseeking.jobseekingbe.entity.Employer;
 import com.jobseeking.jobseekingbe.entity.User;
@@ -29,11 +29,11 @@ public class FileStorageService implements FileStorageServiceImp {
     EmployerRepository employerRepository;
 
     @Override
-    public void save(AvatarUpdateRequest avatarUpdateRequest) {
-        String userId = avatarUpdateRequest.getUserId();
+    public void save(FileUploadRequest fileUploadRequest) {
+        String userId = fileUploadRequest.getUserId();
         Optional<Avatar> avatar = avatarRepository.findById(userId);
         User user = userRepository.getUserById(userId);
-        MultipartFile file = avatarUpdateRequest.getAvatar();
+        MultipartFile file = fileUploadRequest.getFile();
         try {
             if( avatar.isPresent() ) {
                 avatar.get().setData(Base64.getEncoder().encodeToString(file.getBytes()));
@@ -55,10 +55,10 @@ public class FileStorageService implements FileStorageServiceImp {
     }
 
     @Override
-    public void updateBackground(AvatarUpdateRequest avatarUpdateRequest) {
-        String userId = avatarUpdateRequest.getUserId();
+    public void updateBackground(FileUploadRequest fileUploadRequest) {
+        String userId = fileUploadRequest.getUserId();
         Employer employer = employerRepository.findEmployerById(userId);
-        MultipartFile file = avatarUpdateRequest.getAvatar();
+        MultipartFile file = fileUploadRequest.getFile();
         try {
             employer.setBackground(Base64.getEncoder().encodeToString(file.getBytes()));
             employerRepository.save(employer);

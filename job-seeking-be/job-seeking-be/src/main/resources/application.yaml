@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: "jdbc:mysql://localhost:3307/jobSeeking"
+    url: "jdbc:mysql://localhost:3306/jobSeeking"
     username: root
-    password: admin123
+    password: 123456
   mail:
     host: live.smtp.mailtrap.io
     port: 587
@@ -22,6 +22,17 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
       enabled: true
-
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+      default_schema: public
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+      ddl-auto: update
+    show-sql: true
+  main:
+    allow-circular-references: true
 jwt:
   signerKey: "LHdv9EVi3BKZeBHVBzqPE35+0PzgIPPlEkDa+8WSugOj+QAXKDO3DfjPDhSYmkjN"

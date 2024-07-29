@@ -5,6 +5,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 
 @Entity(name = "candidates")
@@ -63,4 +65,13 @@ public class Candidate extends User {
     @ManyToOne
     @JoinColumn(name = "pro_id")
     Province province;
+
+    @OneToMany(mappedBy = "candidate")
+    Set<PostSave> postSaves;
+
+    @OneToMany(mappedBy = "candidate")
+    Set<EmployerFollow> employerFollows;
+
+    @OneToMany(mappedBy = "candidate")
+    Set<CandidateCV> candidateCVSet;
 }

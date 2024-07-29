@@ -2,12 +2,13 @@ package com.jobseeking.jobseekingbe.controller;
 
 import com.jobseeking.jobseekingbe.dto.ApiResponse;
 import com.jobseeking.jobseekingbe.dto.request.PostCreationRequest;
+import com.jobseeking.jobseekingbe.dto.request.PostFilterRequest;
+import com.jobseeking.jobseekingbe.dto.request.PostUpdateRequest;
 import com.jobseeking.jobseekingbe.dto.response.*;
 import com.jobseeking.jobseekingbe.service.imp.PostServiceImp;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.var;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,10 +23,24 @@ public class PostController {
 
     PostServiceImp postServiceImp;
 
-    @GetMapping()
+    @GetMapping("/active")
+    public ApiResponse<List<PostDTO>> getAllActivePost() {
+        return ApiResponse.<List<PostDTO>>builder()
+                .result(postServiceImp.getAllActivePost())
+                .build();
+    }
+
+    @GetMapping("/admin")
     public ApiResponse<List<PostDTO>> getAllPost() {
         return ApiResponse.<List<PostDTO>>builder()
                 .result(postServiceImp.getAllPost())
+                .build();
+    }
+
+    @GetMapping("/status/{id}")
+    public ApiResponse<List<PostDTO>> getPostByStatus(@PathVariable int id) {
+        return ApiResponse.<List<PostDTO>>builder()
+                .result(postServiceImp.getPostByStatus(id))
                 .build();
     }
 
@@ -36,15 +51,15 @@ public class PostController {
                 .build();
     }
 
-    @PostMapping("/status")
-    public ApiResponse<Boolean> activePost(@RequestParam int id) {
+    @PostMapping("/status/{id}")
+    public ApiResponse<Boolean> activePost(@PathVariable int id) {
         return ApiResponse.<Boolean>builder()
                 .result(postServiceImp.activePost(id))
                 .build();
     }
 
-    @PostMapping("/reject")
-    public ApiResponse<Boolean> rejectPost(@RequestParam int id) {
+    @PostMapping("/reject/{id}")
+    public ApiResponse<Boolean> rejectPost(@PathVariable int id) {
         return ApiResponse.<Boolean>builder()
                 .result(postServiceImp.rejectPost(id))
                 .build();
@@ -92,11 +107,27 @@ public class PostController {
                 .build();
     }
 
+    @PutMapping("/{id}")
+    public ApiResponse<Boolean> updatePost(
+            @PathVariable int id,
+            @RequestBody PostUpdateRequest postUpdateRequest) {
+        return ApiResponse.<Boolean>builder()
+                .result(postServiceImp.updatePost(id, postUpdateRequest))
+                .build();
+    }
+
     @PostMapping("/{userId}")
     public ApiResponse<Boolean> addPostWhenAuthenticated(@PathVariable String userId,
                                                                         @RequestBody PostCreationRequest postCreationRequest) {
         return ApiResponse.<Boolean>builder()
                 .result(postServiceImp.addPostWhenAuthenticated(userId, postCreationRequest))
+                .build();
+    }
+
+    @PostMapping("/filter")
+    public ApiResponse<List<PostDTO>> filterPost(@RequestBody PostFilterRequest postFilterRequest) {
+        return ApiResponse.<List<PostDTO>>builder()
+                .result(postServiceImp.filterPost(postFilterRequest))
                 .build();
     }
 

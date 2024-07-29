@@ -3,19 +3,17 @@ package com.jobseeking.jobseekingbe.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
+
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Builder
-public class EmployerDTO {
-    String email;
+public class PostSaveDTO {
+    int postId;
+    byte[] image;
+    String title;
     String companyName;
-    String phone;
-    String website;
-    String companyDesc;
-    String facebook;
-    String linkedIn;
-    int locationId;
-
+    String applicationDate;
 }
